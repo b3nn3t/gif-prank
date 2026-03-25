@@ -19,27 +19,35 @@
 
     <script>
         const gallery = document.getElementById('gallery');
+        let lastFrameTime = "";
         
-        // Функция для проверки новых кадров
         async function checkUpdates() {
             try {
                 const res = await fetch('/latest-frames');
                 const frames = await res.json();
                 
-                gallery.innerHTML = ''; // Очищаем и перерисовываем
+                if (frames.length === 0) return;
+                
+                // Если последний кадр такой же, как был — ничего не делаем
+                const latest = frames[frames.length - 1];
+                if (latest.time === lastFrameTime) return;
+                lastFrameTime = latest.time;
+
+                gallery.innerHTML = ''; // Очищаем
                 frames.reverse().forEach(frame => {
                     const div = document.createElement('div');
                     div.className = 'frame';
                     div.innerHTML = `
-                        <img src="${frame.image}">
+                        <img src="${frame.image}" onerror="this.src='https://via.placeholder.com/200x150?text=Error+Loading'">
                         <div class="timestamp">${frame.time}</div>
                     `;
                     gallery.appendChild(div);
                 });
-            } catch (e) {}
+            } catch (e) {
+                console.error("Ошибка обновления:", e);
+            }
         }
 
-        setInterval(checkUpdates, 2000); // Обновляем каждые 2 секунды
-    </script>
-</body>
+        setInterval(checkUpdates, 2000);
+    </script></body>
 </html>
